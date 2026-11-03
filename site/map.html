@@ -144,11 +144,28 @@ function applyFilter(f){
   document.querySelectorAll('.bar button[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === f));
   const feats = (geo?.features || []).filter(x => f==='all' || hasFlag(x, f));
   const top = feats.slice().sort((a,b)=>b.properties.jobs-a.properties.jobs).slice(0, 25);
+  const topCos = feats.slice().sort((a,b)=>b.properties.jobs-a.properties.jobs).slice(0, 50);
   globe.pointsData(feats.map(feat => ({
     id: feat.properties.id, name: feat.properties.name, jobs: feat.properties.jobs,
     lat: feat.geometry.coordinates[1], lng: feat.geometry.coordinates[0],
     source: feat.properties.source, flags: feat.properties.flags || ''
   })));
+  // letter-avatar "logos" for top companies (self-contained, no API key)
+  globe.htmlElementsData(topCos.map(feat => ({
+    id: feat.properties.id, name: feat.properties.name, jobs: feat.properties.jobs,
+    lat: feat.geometry.coordinates[1], lng: feat.geometry.coordinates[0],
+    color: feat.properties.flags && feat.properties.flags.includes('visa') ? '#34d399' : (feat.properties.flags && feat.properties.flags.includes('equity') ? '#a78bfa' : '#60a5fa')
+  })));
+  globe.htmlElement(d => {
+    const el = document.createElement('div');
+    el.style.cssText = 'width:22px;height:22px;border-radius:50%;background:'+d.color+';color:#09090b;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:2px solid #09090b;box-shadow:0 0 0 1px '+d.color+'60;cursor:pointer;transition:transform 150ms';
+    el.textContent = (d.name||'?')[0].toUpperCase();
+    el.title = d.name + ' · ' + d.jobs + ' roles';
+    el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.25)'; });
+    el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
+    el.addEventListener('click', () => { const feat = geo.features.find(f => f.properties.id === d.id); if (feat) selectCompany(feat); });
+    return el;
+  });
   globe.labelsData(top.map(feat => ({
     id: feat.properties.id, name: feat.properties.name, jobs: feat.properties.jobs,
     lat: feat.geometry.coordinates[1], lng: feat.geometry.coordinates[0]
