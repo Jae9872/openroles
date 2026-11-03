@@ -32,7 +32,7 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
 .panel .selected-card .stats{display:flex;gap:12px;font-size:12px;margin-bottom:10px}
 .panel .selected-card .stats span{color:var(--muted)}
 .panel .selected-card .stats b{color:var(--text)}
-.panel .selected-card .roles{max-height:200px;overflow-y:auto}
+.panel .selected-card .roles{max-height:320px;overflow-y:auto}
 .panel .selected-card .role{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
 .panel .selected-card .role a{color:var(--blue);text-decoration:none}
 .panel .selected-card .role a:hover{text-decoration:underline}
@@ -80,6 +80,7 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
     <button data-f='remote' onclick='filt("remote")'>🌐 Remote <span class='count' id='c-remote'>0</span></button>
     <button data-f='equity' onclick='filt("equity")'>📈 Equity <span class='count' id='c-equity'>0</span></button>
     <button class='toggle' onclick='toggleView()'>List view</button>
+    <button class='toggle' onclick='cycleStyle()'>Style: Night</button>
   </div>
   <aside class='panel' id='panel'>
     <h1>Companies</h1>
@@ -104,7 +105,7 @@ var geo = null, selected = null, currentFilter = 'all';
 
 function hasFlag(feat, flag){ return (feat.properties.flags||'').split(' ').indexOf(flag) !== -1; }
 
-const globe = Globe()(document.getElementById('globe'))
+var globe = Globe()(document.getElementById('globe'))
   .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
   .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
   .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
@@ -113,7 +114,7 @@ const globe = Globe()(document.getElementById('globe'))
   .atmosphereAltitude(0.18)
   .pointAltitude(0.01)
   .pointColor(d => d.flags && d.flags.includes('visa') ? '#34d399' : (d.flags && d.flags.includes('equity') ? '#a78bfa' : '#60a5fa'))
-  .pointRadius(d => Math.max(0.25, Math.min(0.8, d.jobs / 40)))
+  .pointRadius(d => Math.max(0.45, Math.min(1.1, d.jobs / 30)))
   .pointLabel(d => '<div class="globe-tooltip"><b>'+d.name+'</b><br>'+d.jobs+' open roles</div>')
   .onPointClick(d => selectCompany(d))
   .onPointHover(d => { document.body.style.cursor = d ? 'pointer' : 'default'; });
@@ -122,6 +123,20 @@ if (!prefersReduced) globe.controls().autoRotate = true;
 globe.controls().autoRotateSpeed = 0.35;
 globe.controls().enableDamping = true;
 globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
+window.globe = globe;
+
+const STYLES = [
+  { name: 'Night', url: 'https://unpkg.com/three-globe/example/img/earth-night.jpg', bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png', bg: 'https://unpkg.com/three-globe/example/img/night-sky.png', atm: '#60a5fa' },
+  { name: 'Blue Marble', url: 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png', bg: 'https://unpkg.com/three-globe/example/img/night-sky.png', atm: '#38bdf8' },
+  { name: 'Topology', url: 'https://unpkg.com/three-globe/example/img/earth-topology.png', bump: 'https://unpkg.com/three-globe/example/img/earth-topology.png', bg: '#05070a', atm: '#a78bfa' },
+];
+let styleIdx = 0;
+function cycleStyle() {
+  styleIdx = (styleIdx + 1) % STYLES.length;
+  const s = STYLES[styleIdx];
+  globe.globeImageUrl(s.url).bumpImageUrl(s.bump).backgroundImageUrl(s.bg).atmosphereColor(s.atm);
+  document.querySelector('.bar .toggle:last-of-type').textContent = 'Style: ' + s.name;
+}
 
 function applyFilter(f){
   currentFilter = f;
@@ -179,7 +194,7 @@ function showSelectedCard(feat){
     '<div class="stats"><span><b>'+feat.properties.jobs+'</b> roles</span></div>'+
     '<div class="roles" id="roles-list">Loading roles…</div>';
   fetch('jobs_sample.json').then(r=>r.json()).then(jobs => {
-    const jl = jobs.filter(j => (j.company_slug||j.company) === feat.properties.id).slice(0, 20);
+    const jl = jobs.filter(j => (j.company_slug||j.company) === feat.properties.id).slice(0, 40);
     const el = document.getElementById('roles-list');
     if (!jl.length){ el.textContent = 'No roles in sample (full list on feed).'; return; }
     el.innerHTML = jl.map(j => '<div class="role"><a href="'+j.url+'" target="_blank" rel="noopener">'+j.title+'</a><br><span style="color:#71717a">'+(j.location||'')+'</span></div>').join('');
