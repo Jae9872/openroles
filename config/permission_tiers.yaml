@@ -1,0 +1,75 @@
+# Permission tiers — enforced by the policy engine at the tool gateway.
+# Precedence: deny > ask > allow. Uncertainty = deny. Fail closed, always.
+# An agent can never modify this file, its own role, or the sandbox config.
+# Block style only: this file is parsed by polsia2.miniyaml (stdlib, no deps).
+
+tiers:
+  0_auto:
+    actions:
+      - read_workspace_files
+      - web_research_readonly
+      - run_unit_tests_in_sandbox
+      - create_git_branch
+      - read_artifacts
+      - create_mission
+      - start_mission
+      - begin_execution
+      - pause_mission
+      - resume_mission
+      - cancel_mission
+      - create_task
+      - read_events
+      - read_approvals
+  1_auto_audited:
+    actions:
+      - edit_files_in_sandbox
+      - install_approved_dependencies
+      - run_build_in_sandbox
+      - run_lint_and_typecheck
+      - open_pull_request
+    audit: full_event_log
+  2_auto_after_checks:
+    actions:
+      - deploy_to_staging
+    requires:
+      - checks_green
+      - budget_available
+  3_human_approval:
+    actions:
+      - deploy_to_production
+      - modify_database_schema_outside_sandbox
+      - access_secrets
+      - send_external_message
+      - spend_money
+      - modify_policy_or_permissions
+      - access_customer_data
+
+never_auto_approve:
+  - shell_rm_recursive
+  - shell_sudo
+  - mutating_git_push_force
+  - mutating_git_reset_hard
+  - destructive_cloud_cli
+  - terraform_destroy
+  - anything_touching_dotenv_or_key_material
+  - anything_touching_its_own_config
+
+sandbox_defaults:
+  network: deny_by_default
+  egress_verification: application_level
+  credentials: short_lived_injected_only
+  cross_run_isolation: per_run_namespace
+  resources_cpu: 2
+  resources_memory_mb: 4096
+  resources_disk_mb: 10240
+  resources_timeout_seconds: 1800
+
+approvals:
+  shape: action_hash_scoped
+  precedence: org_policy_beats_user_policy
+  on_uncertain_risk_class: deny
+  never_human_overridable:
+    - deploy_to_production
+    - spend_money
+    - modify_policy_or_permissions
+    - access_customer_data

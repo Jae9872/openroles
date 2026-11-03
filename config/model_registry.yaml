@@ -1,0 +1,51 @@
+# config/model_registry.yaml
+# Playground Model Registry: >=2 providers per capability, >=1 non-US vendor
+# Invariant: Never pin a single vendor; pull the plug on any one, execution continues.
+
+version: "1.0"
+
+capabilities:
+  reasoning_and_architecture:
+    description: "High-context systems planning, spec lock, and complex debugging"
+    primary:
+      provider: "anthropic"
+      model: "claude-3-7-sonnet"
+      region: "us"
+    secondary:
+      provider: "deepseek"
+      model: "deepseek-r1"
+      region: "non-us"
+    local_fallback:
+      provider: "ollama"
+      model: "deepseek-r1:14b"
+      endpoint: "http://localhost:11434"
+
+  code_generation_and_build:
+    description: "High-speed implementation, unit tests, and mechanical refactoring"
+    primary:
+      provider: "openai"
+      model: "gpt-4o"
+      region: "us"
+    secondary:
+      provider: "qwen"
+      model: "qwen-2.5-coder-32b"
+      region: "non-us"
+    local_fallback:
+      provider: "ollama"
+      model: "qwen2.5-coder:7b"
+      endpoint: "http://localhost:11434"
+
+  fast_critique_and_routing:
+    description: "Low-latency gatekeeper checks, JSON classification, and linting"
+    primary:
+      provider: "mistral"
+      model: "mistral-large"
+      region: "non-us"
+    secondary:
+      provider: "google"
+      model: "gemini-2.5-flash"
+      region: "us"
+    local_fallback:
+      provider: "ollama"
+      model: "llama3.2:3b"
+      endpoint: "http://localhost:11434"

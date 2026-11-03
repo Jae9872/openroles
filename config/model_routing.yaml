@@ -1,0 +1,134 @@
+# Model routing policy — enforced by the router, never by the agent.
+# Hard filters are absolute; scores cannot override them (SPEC v0.2 §2, §7).
+# Block style only: this file is parsed by polsia2.miniyaml (stdlib, no deps).
+
+defaults:
+  structured_output_required: true
+  log_routing_decision: true
+  budget_enforcement: virtual_key
+  on_budget_exhausted: pause_and_escalate
+
+task_types:
+  planning:
+    preferred: frontier_reasoning
+    fallback: mid_reasoning
+    required_capabilities:
+      - structured_output
+      - long_context
+  web_research:
+    preferred: frontier_reasoning
+    fallback: mid_reasoning
+    required_capabilities:
+      - web_access
+      - structured_output
+  product_spec:
+    preferred: frontier_reasoning
+    fallback: mid_reasoning
+    required_capabilities:
+      - structured_output
+      - long_context
+  architecture:
+    preferred: frontier_reasoning
+    fallback: mid_reasoning
+    required_capabilities:
+      - structured_output
+      - long_context
+  code_generation:
+    preferred: strong_coding
+    fallback: mid_coding
+    required_capabilities:
+      - structured_output
+      - tool_calls
+  tool_execution:
+    preferred: fast_cheap
+    fallback: mid_coding
+    required_capabilities:
+      - tool_calls
+  vision_review:
+    preferred: frontier_reasoning_vision
+    fallback: fast_cheap_vision
+    required_capabilities:
+      - vision
+      - structured_output
+  structured_extraction:
+    preferred: fast_cheap
+    fallback: mid_coding
+    required_capabilities:
+      - structured_output
+  independent_evaluation:
+    preferred: frontier_reasoning
+    fallback: mid_reasoning
+    required_capabilities:
+      - structured_output
+    forbid_same_as:
+      - code_generation
+
+model_tiers:
+  frontier_reasoning:
+    provider: anthropic
+    model: claude-opus-4-6
+    input_cost: high
+    latency: high
+    capabilities:
+      - structured_output
+      - long_context
+      - tool_calls
+  frontier_reasoning_vision:
+    provider: anthropic
+    model: claude-opus-4-6
+    input_cost: high
+    latency: high
+    capabilities:
+      - structured_output
+      - long_context
+      - tool_calls
+      - vision
+  strong_coding:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    input_cost: mid
+    latency: mid
+    capabilities:
+      - structured_output
+      - tool_calls
+  fast_cheap:
+    provider: openai
+    model: gpt-5-mini
+    input_cost: low
+    latency: low
+    capabilities:
+      - structured_output
+      - tool_calls
+  fast_cheap_vision:
+    provider: openai
+    model: gpt-5-mini
+    input_cost: low
+    latency: low
+    capabilities:
+      - structured_output
+      - vision
+  mid_reasoning:
+    provider: deepseek
+    model: deepseek-v3
+    input_cost: low
+    latency: mid
+    capabilities:
+      - structured_output
+      - long_context
+  mid_coding:
+    provider: deepseek
+    model: deepseek-v3
+    input_cost: low
+    latency: mid
+    capabilities:
+      - structured_output
+      - tool_calls
+
+scoring:
+  weights:
+    quality: 0.45
+    reliability: 0.25
+    cost: 0.20
+    latency: 0.10
+  exploration: off
+  min_sample_for_measured: 20

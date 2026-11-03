@@ -1,0 +1,4 @@
+[
+  {"name": "Stripe", "source": "greenhouse", "slug": "stripe"},
+  {"name": "Ramp",   "source": "ashby",      "slug": "ramp"}
+]
