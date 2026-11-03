@@ -32,7 +32,7 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
 .panel .selected-card .stats{display:flex;gap:12px;font-size:12px;margin-bottom:10px}
 .panel .selected-card .stats span{color:var(--muted)}
 .panel .selected-card .stats b{color:var(--text)}
-.panel .selected-card .roles{max-height:320px;overflow-y:auto}
+.panel .selected-card .roles{max-height:420px;overflow-y:auto}
 .panel .selected-card .role{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
 .panel .selected-card .role a{color:var(--blue);text-decoration:none}
 .panel .selected-card .role a:hover{text-decoration:underline}
@@ -87,6 +87,7 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
     <div class='meta' id='meta'>Loading…</div>
     <div class='search'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
     <div class='list' id='list'></div>
+    <div class='countries' id='countries' style='padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)'>Loading countries…</div>
     <div class='legend'>
       <span><span style='width:8px;height:8px;border-radius:50%;background:#60a5fa;display:inline-block'></span> &lt;10 roles</span>
       <span><span style='width:10px;height:10px;border-radius:50%;background:#a78bfa;display:inline-block'></span> 10-50</span>
@@ -142,11 +143,21 @@ function applyFilter(f){
   currentFilter = f;
   document.querySelectorAll('.bar button[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === f));
   const feats = (geo?.features || []).filter(x => f==='all' || hasFlag(x, f));
+  const top = feats.slice().sort((a,b)=>b.properties.jobs-a.properties.jobs).slice(0, 25);
   globe.pointsData(feats.map(feat => ({
     id: feat.properties.id, name: feat.properties.name, jobs: feat.properties.jobs,
     lat: feat.geometry.coordinates[1], lng: feat.geometry.coordinates[0],
     source: feat.properties.source, flags: feat.properties.flags || ''
   })));
+  globe.labelsData(top.map(feat => ({
+    id: feat.properties.id, name: feat.properties.name, jobs: feat.properties.jobs,
+    lat: feat.geometry.coordinates[1], lng: feat.geometry.coordinates[0]
+  })));
+  globe.labelText(d => d.name);
+  globe.labelSize(d => Math.max(0.4, Math.min(1.2, d.jobs / 200)));
+  globe.labelColor(() => 'rgba(244,244,245,0.75)');
+  globe.labelDotRadius(0.3);
+  globe.labelAltitude(0.012);
   renderList(document.getElementById('q').value);
   renderGrid();
 }
@@ -233,6 +244,11 @@ function toggleView(){
 fetch('companies.geojson').then(r=>r.json()).then(data => {
   geo = data; window.geo = geo;
   applyFilter('all');
+  fetch('countries.json').then(r=>r.json()).then(cs => {
+    const el = document.getElementById('countries');
+    el.innerHTML = '<div style="font-weight:600;color:var(--text);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Top countries</div>' +
+      cs.slice(0, 10).map(c => '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+c.country+'</span><span style="color:var(--emerald)">'+c.jobs.toLocaleString()+'</span></div>').join('');
+  }).catch(()=>{});
 }).catch(err => {
   document.getElementById('meta').textContent = 'Failed to load companies.geojson';
   console.error(err);
