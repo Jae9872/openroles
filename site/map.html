@@ -1,17 +1,19 @@
 <!doctype html><html lang='en'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>openroles — globe</title>
-<link href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css' rel='stylesheet' />
-<script src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'></script>
+<title>openroles — map</title>
+<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+<link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css' />
+<link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css' />
+<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+<script src='https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'></script>
 <style>
-:root{--bg:#09090b;--surf:#18181b;--border:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;
---blue:#60a5fa;--emerald:#34d399;--violet:#a78bfa}
+:root{--bg:#09090b;--surf:#18181b;--border:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;--blue:#60a5fa;--emerald:#34d399}
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 .wrap{display:grid;grid-template-columns:1fr 360px;height:100vh}
-#map{width:100%;height:100%}
+#map{width:100%;height:100%;background:#0b1220}
 .panel{background:var(--surf);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.panel h1{font-size:16px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border);letter-spacing:-.01em}
+.panel h1{font-size:16px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border)}
 .panel .meta{padding:8px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
 .panel .search{padding:8px 16px;border-bottom:1px solid var(--border)}
 .panel .search input{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);
@@ -25,31 +27,34 @@ body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--
 .panel .row .loc{color:var(--dim);font-size:11px;margin-top:2px}
 .back{display:inline-block;margin:12px 16px 0;color:var(--blue);font-size:12px;text-decoration:none}
 .legend{padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
-.maplibregl-popup-content{background:var(--surf)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:6px!important;padding:8px 10px!important;font-size:12px}
-.maplibregl-popup-tip{border-top-color:var(--surf)!important}
+.leaflet-popup-content{background:var(--surf);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
+.leaflet-popup-tip{background:var(--surf)}
+.marker-cluster-small{background-color:rgba(96,165,250,.6)}
+.marker-cluster-small div{background-color:rgba(96,165,250,.9);color:#09090b}
+.marker-cluster-medium{background-color:rgba(167,139,250,.6)}
+.marker-cluster-medium div{background-color:rgba(167,139,250,.9);color:#09090b}
+.marker-cluster-large{background-color:rgba(52,211,153,.6)}
+.marker-cluster-large div{background-color:rgba(52,211,153,.9);color:#09090b}
 </style></head><body>
 <div class='wrap'>
   <div id='map'></div>
   <aside class='panel'>
-    <h1>openroles — globe</h1>
+    <h1>openroles — map</h1>
     <div class='meta' id='meta'>Loading companies…</div>
     <div class='search'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
     <div class='list' id='list'></div>
-    <div class='legend'>955 companies with resolved locations · clustered · click a pin or a row</div>
+    <div class='legend'>955 companies with resolved locations · clustered markers · click a pin or a row</div>
     <a class='back' href='index.html'>← back to feed</a>
   </aside>
 </div>
 <script>
-const map = new maplibregl.Map({
-  container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/liberty',
-  center: [0, 20],
-  zoom: 1.6,
-  projection: 'globe'
-});
-map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-left');
+const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors', maxZoom: 18
+}).addTo(map);
 
-let geo = null, selected = null;
+const markers = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 });
+let geo = null, selected = null, markerById = {};
 
 function renderList(filter=''){
   const list = document.getElementById('list');
@@ -59,7 +64,7 @@ function renderList(filter=''){
     .filter(x => !f || (x.properties.name||'').toLowerCase().includes(f))
     .sort((a,b)=> b.properties.jobs - a.properties.jobs);
   document.getElementById('meta').textContent = feats.length + ' companies · ' + feats.reduce((s,x)=>s+x.properties.jobs,0) + ' roles';
-  feats.slice(0, 200).forEach(feat => {
+  feats.slice(0, 300).forEach(feat => {
     const d = document.createElement('div');
     d.className = 'row' + (selected && selected.properties.id===feat.properties.id ? ' sel' : '');
     d.innerHTML = '<div class="name">'+feat.properties.name+'<span class="count">'+feat.properties.jobs+'</span></div>'+
@@ -72,40 +77,30 @@ function renderList(filter=''){
 function selectCompany(feat){
   selected = feat;
   const [lng, lat] = feat.geometry.coordinates;
-  map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 6), duration: 900 });
-  new maplibregl.Popup({ offset: 12 }).setLngLat([lng, lat])
-    .setHTML('<b>'+feat.properties.name+'</b><br>'+feat.properties.jobs+' open roles<br><span style="color:#71717a">'+(feat.properties.source||'')+'</span>')
-    .addTo(map);
+  map.flyTo([lat, lng], Math.max(map.getZoom(), 5), { duration: 0.8 });
+  if (markerById[feat.properties.id]) markerById[feat.properties.id].openPopup();
   renderList(document.getElementById('q').value);
 }
 
-map.on('load', async () => {
-  const r = await fetch('companies.geojson');
-  geo = await r.json();
-  map.addSource('companies', { type:'geojson', data: geo, cluster:true, clusterRadius:45, clusterMaxZoom:12 });
-  map.addLayer({ id:'clusters', type:'circle', source:'companies', filter:['has','point_count'],
-    paint:{ 'circle-color':['step',['get','point_count'], '#60a5fa', 10, '#a78bfa', 50, '#34d399'],
-            'circle-radius':['step',['get','point_count'], 14, 10, 20, 50, 28],
-            'circle-opacity':0.85, 'circle-stroke-width':1, 'circle-stroke-color':'#09090b' }});
-  map.addLayer({ id:'cluster-count', type:'symbol', source:'companies', filter:['has','point_count'],
-    layout:{ 'text-field':'{point_count_abbreviated}', 'text-size':11 },
-    paint:{ 'text-color':'#09090b' }});
-  map.addLayer({ id:'unclustered', type:'circle', source:'companies', filter:['!',['has','point_count']],
-    paint:{ 'circle-color':'#f4f4f5', 'circle-radius':5, 'circle-stroke-width':1, 'circle-stroke-color':'#09090b' }});
-  map.on('click','clusters', e => {
-    const f = map.queryRenderedFeatures(e.point, { layers:['clusters'] })[0];
-    map.easeTo({ center: f.geometry.coordinates, zoom: map.getZoom()+2, duration:500 });
+fetch('companies.geojson').then(r=>r.json()).then(data => {
+  geo = data;
+  data.features.forEach(feat => {
+    const [lng, lat] = feat.geometry.coordinates;
+    const m = L.marker([lat, lng]);
+    m.bindPopup('<b>'+feat.properties.name+'</b><br>'+feat.properties.jobs+' open roles<br><span style="color:#71717a">'+(feat.properties.source||'')+'</span>');
+    m.on('click', () => selectCompany(feat));
+    markers.addLayer(m);
+    markerById[feat.properties.id] = m;
   });
-  map.on('click','unclustered', e => { selectCompany(e.features[0]); });
-  map.on('mouseenter','clusters', ()=> map.getCanvas().style.cursor='pointer');
-  map.on('mouseleave','clusters', ()=> map.getCanvas().style.cursor='');
-  map.on('mouseenter','unclustered', ()=> map.getCanvas().style.cursor='pointer');
-  map.on('mouseleave','unclustered', ()=> map.getCanvas().style.cursor='');
+  map.addLayer(markers);
   renderList();
+}).catch(err => {
+  document.getElementById('meta').textContent = 'Failed to load companies.geojson';
+  console.error(err);
 });
 
 document.getElementById('q').addEventListener('input', e => renderList(e.target.value));
 </script>
 </body></html>
 PYEOF
-echo "written"; python3 -c "import json; d=json.load(open('site/companies.geojson')); print('geojson features:', len(d['features']))"
+echo written
