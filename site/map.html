@@ -12,6 +12,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
 #map{position:absolute;inset:0;z-index:0}
+.leaflet-tile-pane{filter:brightness(0.55) invert(1) contrast(1.15) saturate(0.4)}
 /* floating filter bar */
 .bar{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1000;
   display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;
@@ -124,8 +125,8 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
 </div>
 <script>
 const map = L.map('map', { worldCopyJump: true, zoomControl: true }).setView([20, 0], 2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap, © CARTO', maxZoom: 19, subdomains: 'abcd'
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors', maxZoom: 18
 }).addTo(map);
 
 const clusters = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, spiderfyOnMaxZoom: true });
