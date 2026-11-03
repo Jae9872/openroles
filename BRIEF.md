@@ -6,7 +6,7 @@ Updated: 2026-11-03 | Status: ON-PLAN
 Free forever portal: every live role at funded startups, freshnessStamped, human-trail — seekers never pay
 
 ## NOW
-C5: readiness gate — engine+site+curation all verifier-signed
+(mission complete)
 Done when: verification command prints expected output
 ## PLAN (locked)
 C1: C1: board ingestion — public Greenhouse/Ashby adapters, stamped provenance
@@ -19,5 +19,6 @@ C5: C5: readiness gate — engine+site+curation all verifier-signed
 - C2 (gate receipt, chain verified)
 - C3 (gate receipt, chain verified)
 - C4 (gate receipt, chain verified)
+- C5 (gate receipt, chain verified)
 ## CHANGE LOG (one JSON entry per line, newest on top, never delete)
 2026-11-03 {"d": "2026-11-03", "kind": "CREATED", "note": "brief initialized by architect"}
