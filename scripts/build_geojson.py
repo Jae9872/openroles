@@ -78,11 +78,24 @@ def main():
     (ROOT/"site/companies.geojson").write_text(json.dumps(out))
 
     # country breakdown
+    # country breakdown + centroids (for globe labels)
     by_country = collections.Counter()
+    by_country_companies = collections.defaultdict(set)
+    by_country_coords = collections.defaultdict(list)
     for f in features:
         by_country[f["properties"]["country"]] += f["properties"]["jobs"]
-    country_list = [{"country": COUNTRY_NAMES.get(c, c), "code": c, "jobs": n, "companies": sum(1 for f in features if f["properties"]["country"] == c)}
-                    for c, n in by_country.most_common(30)]
+        by_country_companies[f["properties"]["country"]].add(f["properties"]["id"])
+        by_country_coords[f["properties"]["country"]].append(f["geometry"]["coordinates"])
+    country_list = []
+    for c, n in by_country.most_common(30):
+        coords = by_country_coords[c]
+        if coords:
+            lng = sum(x[0] for x in coords) / len(coords)
+            lat = sum(x[1] for x in coords) / len(coords)
+        else:
+            lat, lng = 0, 0
+        country_list.append({"country": COUNTRY_NAMES.get(c, c), "code": c, "jobs": n,
+                            "companies": len(by_country_companies[c]), "lat": lat, "lng": lng})
     (ROOT/"data/countries.json").write_text(json.dumps(country_list, indent=1))
     (ROOT/"site/countries.json").write_text(json.dumps(country_list))
 

@@ -138,13 +138,27 @@ const globe = Globe()(document.getElementById('globe'))
   .atmosphereAltitude(0.18)
   .pointAltitude(0.01)
   .pointColor(d => d.flags && d.flags.includes('visa') ? '#34d399' : (d.flags && d.flags.includes('equity') ? '#a78bfa' : '#60a5fa'))
-  .pointRadius(d => Math.max(0.45, Math.min(1.1, d.jobs / 30)))
+  .pointRadius(d => Math.max(0.6, Math.min(1.4, d.jobs / 25)))
   .pointLabel(d => '<div class="globe-tooltip"><b>'+d.name+'</b><br>'+d.jobs+' open roles<br><span style="color:#71717a;font-size:11px">click to see roles</span></div>')
   .onPointClick(d => selectCompany(d))
   .onPointHover(d => { document.body.style.cursor = d ? 'pointer' : 'default'; });
 
+globe.onGlobeClick((coords) => {
+  if (!coords || !geo || !geo.features) return;
+  let best = null, bestDist = 5;
+  for (const f of geo.features) {
+    const [lng, lat] = f.geometry.coordinates;
+    const dlat = lat - coords.lat, dlng = lng - coords.lng;
+    const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+    if (dist < bestDist) { bestDist = dist; best = f; }
+  }
+  if (best) selectCompany(best);
+});
+
 window.globe = globe;
 if (!prefersReduced) globe.controls().autoRotate = true;
+document.getElementById('globe').addEventListener('mouseenter', () => { if (globe.controls().autoRotate) globe.controls().autoRotateSpeed = 0.15; });
+document.getElementById('globe').addEventListener('mouseleave', () => { if (globe.controls().autoRotate) globe.controls().autoRotateSpeed = 0.35; });
 globe.controls().autoRotateSpeed = 0.35;
 globe.controls().enableDamping = true;
 globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
@@ -175,6 +189,15 @@ function applyFilter(f){
     el.addEventListener('click', () => { const feat = geo.features.find(f => f.properties.id === d.id); if (feat) selectCompany(feat); });
     return el;
   });
+  // country labels (top 15 by job count)
+  fetch('countries.json').then(r=>r.json()).then(cs => {
+    globe.labelsData(cs.slice(0, 15).map(c => ({ lat: c.lat, lng: c.lng, name: c.country, jobs: c.jobs })));
+    globe.labelText(d => d.name);
+    globe.labelSize(d => Math.max(0.35, Math.min(0.9, d.jobs / 15000)));
+    globe.labelColor(() => 'rgba(244,244,245,0.55)');
+    globe.labelDotRadius(0.2);
+    globe.labelAltitude(0.01);
+  }).catch(()=>{});
   renderList(document.getElementById('q').value);
   renderGrid();
 }
@@ -205,8 +228,19 @@ function renderList(filter=''){
 }
 
 function selectCompany(feat){
-  selected = feat;
-  const [lng, lat] = feat.geometry.coordinates;
+  if (!feat) return;
+  let target = feat;
+  // normalize: globe point data has id/name/jobs/lat/lng, not geometry
+  if (!feat.geometry || !feat.geometry.coordinates) {
+    const fid = feat.id || feat.properties?.id || feat.name;
+    const match = (geo?.features || []).find(f => f.properties.id === fid);
+    if (match) target = match;
+    else target = { properties: { id: fid, name: feat.name || fid, jobs: feat.jobs || 0, source: feat.source || '', flags: feat.flags || '' },
+                   geometry: { coordinates: [feat.lng || 0, feat.lat || 0] } };
+  }
+  selected = target;
+  const coords = selected.geometry.coordinates;
+  const [lng, lat] = coords;
   globe.pointOfView({ lat, lng, altitude: 1.5 }, prefersReduced ? 0 : 800);
   renderList(document.getElementById('q').value);
   showSelectedCard(feat);
