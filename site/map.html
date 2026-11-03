@@ -85,9 +85,9 @@ body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color
   <aside class='panel' id='panel'>
     <h1>Companies</h1>
     <div class='meta' id='meta'>Loading…</div>
+    <div class='countries' id='countries' style='padding:8px 16px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)'>Loading countries…</div>
     <div class='search'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
     <div class='list' id='list'></div>
-    <div class='countries' id='countries' style='padding:8px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)'>Loading countries…</div>
     <div class='legend'>
       <span><span style='width:8px;height:8px;border-radius:50%;background:#60a5fa;display:inline-block'></span> &lt;10 roles</span>
       <span><span style='width:10px;height:10px;border-radius:50%;background:#a78bfa;display:inline-block'></span> 10-50</span>
@@ -257,5 +257,3 @@ fetch('companies.geojson').then(r=>r.json()).then(data => {
 document.getElementById('q').addEventListener('input', e => renderList(e.target.value));
 </script>
 </body></html>
-PYEOF
-echo "written"
