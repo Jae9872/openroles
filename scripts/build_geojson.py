@@ -25,8 +25,13 @@ def main():
     for r in rows:
         slug = r.get("company_slug") or r.get("company")
         if not slug: continue
-        a = agg.setdefault(slug, {"name": slug, "jobs": 0, "coords": None, "source": r.get("source")})
+        a = agg.setdefault(slug, {"name": slug, "jobs": 0, "coords": None, "source": r.get("source"),
+                                  "visa": 0, "remote": 0, "equity": 0})
         a["jobs"] += 1
+        fl = r.get("flags") or {}
+        if fl.get("has_visa"): a["visa"] += 1
+        if fl.get("remote_type") not in (None, "Onsite"): a["remote"] += 1
+        if fl.get("has_equity"): a["equity"] += 1
         if a["coords"] is None:
             a["coords"] = resolve_coords(r.get("location"))
     features = []
@@ -34,14 +39,27 @@ def main():
         c = a["coords"]
         if not c or len(c) != 2: continue
         lat, lng = c  # aggregator stores [lat, lng]
+        flag_tokens = []
+        if a["visa"]: flag_tokens.append("visa")
+        if a["remote"]: flag_tokens.append("remote")
+        if a["equity"]: flag_tokens.append("equity")
         features.append({
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [lng, lat]},
-            "properties": {"id": slug, "name": slug, "jobs": a["jobs"], "source": a["source"]},
+            "properties": {"id": slug, "name": slug, "jobs": a["jobs"], "source": a["source"],
+                           "flags": " ".join(flag_tokens),
+                           "visa": a["visa"], "remote": a["remote"], "equity": a["equity"]},
         })
     out = {"type": "FeatureCollection", "features": features}
     (ROOT/"data/companies.geojson").write_text(json.dumps(out))
     (ROOT/"site/companies.geojson").write_text(json.dumps(out))
+    # sample of roles for the selected-company panel
+    sample = []
+    for r in rows[:2000]:
+        sample.append({"company_slug": r.get("company_slug") or r.get("company"),
+                      "title": r.get("title"), "url": r.get("url"),
+                      "location": r.get("location")})
+    (ROOT/"site/jobs_sample.json").write_text(json.dumps(sample))
     print("GEOJSON_OK companies=%d with_coords=%d (of %d)" % (len(agg), len(features), len(agg)))
     return 0
 

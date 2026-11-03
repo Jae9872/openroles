@@ -198,3 +198,49 @@ No arbitrary pixels. If a value isn't on this scale, it's a bug.
 Dark is the default (Linear palette). Light mode is a v2 feature — only add when
 there's user demand. When added, swap `--bg`/`--surf`/`--text` tokens via
 `@media (prefers-color-scheme: light)` or a toggle class on `<html>`.
+
+---
+
+## 12. Art direction — "living atlas of startups" (added 2026-11-03)
+
+The default aesthetic is no longer "efficient data table." It is **a living atlas of
+startups** — spatial, curious, a little magical, but still useful. Keep the dark base
+and accessible signal colors; change composition, marker scale, and motion.
+
+### Composition
+- **Map is the hero.** Full-bleed map fills the viewport. The list is a floating
+  side panel (desktop) / draggable bottom sheet (mobile), not a 50/50 split.
+- **One focal point at a time.** Either the map (exploring) or the selected company
+  card (reading). Never make every row compete equally.
+- **Floating filter bar** centered at top of map: translucent glass (`--surf` at 80%
+  opacity + backdrop-blur), pill buttons, counts inline.
+- **Selected company card** is the second focal point: slides in from the right,
+  shows name, role count, visa/remote/equity counts, and the open roles list.
+
+### Marker scale (larger than before)
+- Individual company: 12px circle, 2px white stroke, subtle glow ring on hover.
+- Cluster: 28/36/48px by count band (<10 / 10-50 / 50+), with count label.
+- Hover: scale 1.2, 150ms ease-out. Selected: persistent glow ring + scale 1.15.
+- Cluster click: smooth glide to expand (MapLibre/Leaflet flyTo, 600ms).
+
+### Motion (purposeful, not decorative)
+- Camera glide on cluster open / company select: 600-900ms, ease-out.
+- Panel reveal: 200ms slide-in from right.
+- Marker hover: 150ms scale.
+- Filter toggle: 150ms fade of non-matching markers (opacity 0.25, not hidden).
+- Reduced motion: instant transitions, no glide.
+
+### Basemap
+- Dark matter style (CartoDB) for atmosphere. Attribution required.
+- Fallback: OpenStreetMap raster (current) if dark tiles unavailable.
+
+### Connected map ↔ list
+- Selecting a role in the list highlights its company marker and glides the map.
+- Moving the map updates the side panel to "nearby companies" (within viewport).
+- Toggle button switches between map view and compact list view.
+
+### What stays the same
+- Accessibility: contrast ≥4.5:1, visible focus, keyboard path, ≥2 cues per state.
+- Semantic signal colors (emerald/blue/violet/amber) — unchanged.
+- Spacing scale 4/8/16/24/40 — unchanged.
+- Content rules (verbs, real numbers, no jargon) — unchanged.

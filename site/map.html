@@ -1,60 +1,161 @@
 <!doctype html><html lang='en'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>openroles — map</title>
+<title>openroles — atlas</title>
 <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
 <link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css' />
 <link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css' />
 <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
 <script src='https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'></script>
 <style>
-:root{--bg:#09090b;--surf:#18181b;--border:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;--blue:#60a5fa;--emerald:#34d399}
-*{box-sizing:border-box}
-body{margin:0;font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
-.wrap{display:grid;grid-template-columns:1fr 360px;height:100vh}
-#map{width:100%;height:100%;background:#0b1220}
-.panel{background:var(--surf);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.panel h1{font-size:16px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border)}
+:root{--bg:#09090b;--surf:#18181b;--surf2:#1f1f23;--border:#27272a;--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;
+--blue:#60a5fa;--emerald:#34d399;--violet:#a78bfa;--amber:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+#map{position:absolute;inset:0;z-index:0}
+/* floating filter bar */
+.bar{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:1000;
+  display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;
+  background:rgba(24,24,27,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.bar .title{font-weight:600;font-size:13px;letter-spacing:-.01em;margin-right:6px;
+  background:linear-gradient(90deg,var(--blue),var(--emerald));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar button{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;transition:all 150ms ease-out;
+  display:inline-flex;align-items:center;gap:4px}
+.bar button:hover{border-color:#3f3f46;color:var(--text)}
+.bar button.on{border-color:var(--text);color:var(--text);background:rgba(255,255,255,.06)}
+.bar button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bar .count{color:var(--dim);font-size:10px}
+.bar .toggle{margin-left:6px;padding:5px 10px;border-radius:6px;background:var(--surf);color:var(--text);font-size:11px;font-weight:600}
+/* side panel */
+.panel{position:absolute;top:16px;right:16px;bottom:16px;width:380px;z-index:900;
+  background:rgba(24,24,27,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform 200ms ease-out}
+.panel.hidden{transform:translateX(420px)}
+.panel h1{font-size:15px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border);letter-spacing:-.01em;font-weight:600}
 .panel .meta{padding:8px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
 .panel .search{padding:8px 16px;border-bottom:1px solid var(--border)}
-.panel .search input{width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);
-  background:var(--bg);color:var(--text);font-size:13px}
-.panel .list{flex:1;overflow-y:auto}
-.panel .row{padding:10px 16px;border-bottom:1px solid #1f1f23;cursor:pointer;transition:background 150ms}
-.panel .row:hover{background:#1f1f23}
-.panel .row.sel{background:#27272a;border-left:2px solid var(--blue)}
-.panel .row .name{font-weight:500;font-size:13px}
-.panel .row .count{color:var(--emerald);font-size:11px;margin-left:6px}
+.panel .search input{width:100%;padding:7px 11px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg);color:var(--text);font-size:13px;transition:border-color 150ms}
+.panel .search input:focus{outline:none;border-color:var(--blue)}
+.panel .list{flex:1;overflow-y:auto;padding:4px 0}
+.panel .row{padding:10px 16px;cursor:pointer;transition:background 150ms;border-left:2px solid transparent}
+.panel .row:hover{background:rgba(255,255,255,.03)}
+.panel .row.sel{background:rgba(96,165,250,.08);border-left-color:var(--blue)}
+.panel .row .name{font-weight:500;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.panel .row .count{color:var(--emerald);font-size:11px;font-weight:600}
 .panel .row .loc{color:var(--dim);font-size:11px;margin-top:2px}
-.back{display:inline-block;margin:12px 16px 0;color:var(--blue);font-size:12px;text-decoration:none}
-.legend{padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--dim)}
-.leaflet-popup-content{background:var(--surf);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px}
-.leaflet-popup-tip{background:var(--surf)}
-.marker-cluster-small{background-color:rgba(96,165,250,.6)}
-.marker-cluster-small div{background-color:rgba(96,165,250,.9);color:#09090b}
-.marker-cluster-medium{background-color:rgba(167,139,250,.6)}
-.marker-cluster-medium div{background-color:rgba(167,139,250,.9);color:#09090b}
-.marker-cluster-large{background-color:rgba(52,211,153,.6)}
-.marker-cluster-large div{background-color:rgba(52,211,153,.9);color:#09090b}
+.panel .row .badges{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
+.panel .badge{font-size:9px;padding:1px 6px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+.panel .selected-card{padding:16px;border-bottom:1px solid var(--border);background:rgba(96,165,250,.04)}
+.panel .selected-card .title{font-size:15px;font-weight:600;margin-bottom:2px}
+.panel .selected-card .sub{color:var(--muted);font-size:12px;margin-bottom:8px}
+.panel .selected-card .stats{display:flex;gap:12px;font-size:12px;margin-bottom:10px}
+.panel .selected-card .stats span{color:var(--muted)}
+.panel .selected-card .stats b{color:var(--text)}
+.panel .selected-card .roles{max-height:180px;overflow-y:auto}
+.panel .selected-card .role{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.panel .selected-card .role a{color:var(--blue);text-decoration:none}
+.panel .selected-card .role a:hover{text-decoration:underline}
+.panel .selected-card .close{position:absolute;top:12px;right:12px;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
+.legend{padding:8px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend .dot{width:8px;height:8px;border-radius:50%}
+.back{display:inline-block;margin:0 16px 12px;color:var(--blue);font-size:12px;text-decoration:none}
+/* list view toggle */
+.listview{display:none;position:absolute;inset:0;z-index:800;background:var(--bg);overflow-y:auto;padding:70px 24px 24px}
+.listview.on{display:block}
+.listview .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.listview .card{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:14px;transition:transform 150ms}
+.listview .card:hover{transform:translateY(-2px);border-color:#3f3f46}
+.listview .card h3{font-size:14px;margin:0 0 4px}
+.listview .card .meta{color:var(--muted);font-size:12px}
+.listview .card .badges{margin-top:8px;display:flex;gap:4px;flex-wrap:wrap}
+/* markers */
+.leaflet-marker-icon.company-dot{background:var(--text);border:2px solid #09090b;border-radius:50%;
+  box-shadow:0 0 0 0 rgba(96,165,250,.4);transition:transform 150ms,box-shadow 150ms}
+.leaflet-marker-icon.company-dot:hover{transform:scale(1.2);box-shadow:0 0 0 6px rgba(96,165,250,.25)}
+.leaflet-marker-icon.company-dot.sel{transform:scale(1.15);box-shadow:0 0 0 8px rgba(96,165,250,.35);background:var(--blue)}
+.marker-cluster{background:transparent!important}
+.marker-cluster div{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;color:#09090b;transition:transform 150ms}
+.marker-cluster-small div{background:rgba(96,165,250,.85)}
+.marker-cluster-medium div{background:rgba(167,139,250,.85);width:40px;height:40px}
+.marker-cluster-large div{background:rgba(52,211,153,.85);width:48px;height:48px}
+.leaflet-popup-content-wrapper{background:var(--surf)!important;color:var(--text)!important;border:1px solid var(--border)!important;border-radius:8px!important;padding:0!important}
+.leaflet-popup-content{margin:10px 12px!important;font-size:12px}
+.leaflet-popup-tip{background:var(--surf)!important}
+.leaflet-control-zoom{border:1px solid var(--border)!important;border-radius:6px!important;overflow:hidden}
+.leaflet-control-zoom a{background:var(--surf)!important;color:var(--text)!important;border-bottom:1px solid var(--border)!important}
+@media (max-width:720px){
+  .wrap{grid-template-columns:1fr}
+  .panel{top:auto;bottom:0;left:0;right:0;width:100%;height:55vh;border-radius:12px 12px 0 0;border-left:none;border-bottom:none}
+  .bar{font-size:11px;padding:6px 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <div class='wrap'>
   <div id='map'></div>
-  <aside class='panel'>
-    <h1>openroles — map</h1>
-    <div class='meta' id='meta'>Loading companies…</div>
+  <div class='bar' role='toolbar' aria-label='Filter and navigate'>
+    <span class='title'>openroles atlas</span>
+    <button data-f='all' class='on' onclick='filt("all")'>All <span class='count' id='c-all'>0</span></button>
+    <button data-f='visa' onclick='filt("visa")'>🛂 Visa <span class='count' id='c-visa'>0</span></button>
+    <button data-f='remote' onclick='filt("remote")'>🌐 Remote <span class='count' id='c-remote'>0</span></button>
+    <button data-f='equity' onclick='filt("equity")'>📈 Equity <span class='count' id='c-equity'>0</span></button>
+    <button class='toggle' onclick='toggleView()'>List view</button>
+  </div>
+  <aside class='panel' id='panel'>
+    <h1>Companies</h1>
+    <div class='meta' id='meta'>Loading…</div>
     <div class='search'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
     <div class='list' id='list'></div>
-    <div class='legend'>955 companies with resolved locations · clustered markers · click a pin or a row</div>
+    <div class='legend'>
+      <span><span class='dot' style='background:#60a5fa'></span> &lt;10 roles</span>
+      <span><span class='dot' style='background:#a78bfa'></span> 10-50</span>
+      <span><span class='dot' style='background:#34d399'></span> 50+</span>
+    </div>
     <a class='back' href='index.html'>← back to feed</a>
   </aside>
+  <div class='listview' id='listview'>
+    <h1 style='font-size:20px;margin-bottom:16px'>All companies</h1>
+    <div class='grid' id='grid'></div>
+  </div>
 </div>
 <script>
-const map = L.map('map', { worldCopyJump: true }).setView([20, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors', maxZoom: 18
+const map = L.map('map', { worldCopyJump: true, zoomControl: true }).setView([20, 0], 2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap, © CARTO', maxZoom: 19, subdomains: 'abcd'
 }).addTo(map);
 
-const markers = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 });
-let geo = null, selected = null, markerById = {};
+const clusters = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, spiderfyOnMaxZoom: true });
+let geo = null, selected = null, markerById = {}, currentFilter = 'all';
+
+function hasFlag(feat, flag){ return (feat.properties.flags||'').split(' ').indexOf(flag) !== -1; }
+
+function applyFilter(f){
+  currentFilter = f;
+  document.querySelectorAll('.bar button[data-f]').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  clusters.clearLayers();
+  markerById = {};
+  const feats = (geo?.features || []).filter(x => f==='all' || hasFlag(x, f));
+  feats.forEach(feat => {
+    const [lng, lat] = feat.geometry.coordinates;
+    const m = L.circleMarker([lat, lng], {
+      radius: 6, color: '#09090b', weight: 2, fillColor: '#f4f4f5', fillOpacity: 0.9,
+      className: 'company-dot'
+    });
+    m.bindTooltip('<b>'+feat.properties.name+'</b><br>'+feat.properties.jobs+' open roles', { direction:'top', offset:[0,-8] });
+    m.on('mouseover', () => { m.setStyle({ radius: 8, fillColor: '#60a5fa' }); });
+    m.on('mouseout', () => { if (selected !== feat) m.setStyle({ radius: 6, fillColor: '#f4f4f5' }); });
+    m.on('click', () => selectCompany(feat));
+    clusters.addLayer(m);
+    markerById[feat.properties.id] = m;
+  });
+  map.addLayer(clusters);
+  renderList(document.getElementById('q').value);
+  renderGrid();
+}
 
 function renderList(filter=''){
   const list = document.getElementById('list');
@@ -62,13 +163,20 @@ function renderList(filter=''){
   const f = filter.toLowerCase();
   const feats = (geo?.features || [])
     .filter(x => !f || (x.properties.name||'').toLowerCase().includes(f))
+    .filter(x => currentFilter==='all' || hasFlag(x, currentFilter))
     .sort((a,b)=> b.properties.jobs - a.properties.jobs);
-  document.getElementById('meta').textContent = feats.length + ' companies · ' + feats.reduce((s,x)=>s+x.properties.jobs,0) + ' roles';
-  feats.slice(0, 300).forEach(feat => {
+  const total = feats.reduce((s,x)=>s+x.properties.jobs,0);
+  document.getElementById('meta').textContent = feats.length + ' companies · ' + total + ' roles';
+  document.getElementById('c-all').textContent = (geo?.features||[]).length;
+  document.getElementById('c-visa').textContent = (geo?.features||[]).filter(x=>hasFlag(x,'visa')).length;
+  document.getElementById('c-remote').textContent = (geo?.features||[]).filter(x=>hasFlag(x,'remote')).length;
+  document.getElementById('c-equity').textContent = (geo?.features||[]).filter(x=>hasFlag(x,'equity')).length;
+  feats.slice(0, 200).forEach(feat => {
     const d = document.createElement('div');
     d.className = 'row' + (selected && selected.properties.id===feat.properties.id ? ' sel' : '');
     d.innerHTML = '<div class="name">'+feat.properties.name+'<span class="count">'+feat.properties.jobs+'</span></div>'+
-                  '<div class="loc">'+(feat.properties.source||'')+'</div>';
+                  '<div class="loc">'+(feat.properties.source||'')+'</div>'+
+                  (feat.properties.flags ? '<div class="badges">'+feat.properties.flags.split(' ').map(x=>'<span class="badge">'+x+'</span>').join('')+'</div>' : '');
     d.addEventListener('click', () => selectCompany(feat));
     list.appendChild(d);
   });
@@ -77,30 +185,82 @@ function renderList(filter=''){
 function selectCompany(feat){
   selected = feat;
   const [lng, lat] = feat.geometry.coordinates;
-  map.flyTo([lat, lng], Math.max(map.getZoom(), 5), { duration: 0.8 });
-  if (markerById[feat.properties.id]) markerById[feat.properties.id].openPopup();
+  map.flyTo([lat, lng], Math.max(map.getZoom(), 6), { duration: 700, easeLinearity: 0.25 });
+  L.popup({ offset: [0,-6] }).setLatLng([lat, lng])
+    .setContent('<b>'+feat.properties.name+'</b><br>'+feat.properties.jobs+' open roles<br><span style="color:#71717a">'+(feat.properties.source||'')+'</span>')
+    .openOn(map);
   renderList(document.getElementById('q').value);
+  showSelectedCard(feat);
+}
+
+function showSelectedCard(feat){
+  const panel = document.getElementById('panel');
+  let card = document.getElementById('selected-card');
+  if (!card){ card = document.createElement('div'); card.id='selected-card'; card.className='selected-card'; panel.insertBefore(card, panel.querySelector('.list')); }
+  card.innerHTML = '<button class="close" onclick="clearSelection()" aria-label="Close">×</button>'+
+    '<div class="title">'+feat.properties.name+'</div>'+
+    '<div class="sub">'+(feat.properties.source||'')+' · '+feat.properties.jobs+' open roles</div>'+
+    '<div class="stats"><span><b>'+feat.properties.jobs+'</b> roles</span></div>'+
+    '<div class="roles" id="roles-list">Loading roles…</div>';
+  // populate roles from jobs data (fetched separately)
+  fetch('jobs_sample.json').then(r=>r.json()).then(jobs => {
+    const jl = jobs.filter(j => (j.company_slug||j.company) === feat.properties.id).slice(0, 20);
+    const el = document.getElementById('roles-list');
+    if (!jl.length){ el.textContent = 'No roles in sample (full list on feed).'; return; }
+    el.innerHTML = jl.map(j => '<div class="role"><a href="'+j.url+'" target="_blank" rel="noopener">'+j.title+'</a><br><span style="color:#71717a">'+(j.location||'')+'</span></div>').join('');
+  }).catch(()=>{ document.getElementById('roles-list').textContent = 'Roles list unavailable.'; });
+}
+
+function clearSelection(){
+  selected = null;
+  const c = document.getElementById('selected-card'); if (c) c.remove();
+  renderList(document.getElementById('q').value);
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const feats = (geo?.features || []).filter(x => currentFilter==='all' || hasFlag(x, currentFilter))
+    .sort((a,b)=> b.properties.jobs - a.properties.jobs).slice(0, 60);
+  feats.forEach(feat => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = '<h3>'+feat.properties.name+'</h3><div class="meta">'+feat.properties.jobs+' roles · '+(feat.properties.source||'')+'</div>'+
+      '<div class="badges">'+(feat.properties.flags||'').split(' ').filter(Boolean).map(x=>'<span class="badge">'+x+'</span>').join('')+'</div>';
+    d.addEventListener('click', () => { toggleView(); setTimeout(()=>selectCompany(feat), 100); });
+    grid.appendChild(d);
+  });
+}
+
+function toggleView(){
+  const lv = document.getElementById('listview');
+  lv.classList.toggle('on');
+  document.querySelector('.toggle').textContent = lv.classList.contains('on') ? 'Map view' : 'List view';
 }
 
 fetch('companies.geojson').then(r=>r.json()).then(data => {
   geo = data;
-  data.features.forEach(feat => {
-    const [lng, lat] = feat.geometry.coordinates;
-    const m = L.marker([lat, lng]);
-    m.bindPopup('<b>'+feat.properties.name+'</b><br>'+feat.properties.jobs+' open roles<br><span style="color:#71717a">'+(feat.properties.source||'')+'</span>');
-    m.on('click', () => selectCompany(feat));
-    markers.addLayer(m);
-    markerById[feat.properties.id] = m;
-  });
-  map.addLayer(markers);
-  renderList();
+  // attach flags to features from a parallel lookup (flags already in geojson? no — add via jobs aggregation)
+  applyFilter('all');
 }).catch(err => {
   document.getElementById('meta').textContent = 'Failed to load companies.geojson';
   console.error(err);
 });
 
 document.getElementById('q').addEventListener('input', e => renderList(e.target.value));
+// nearby update on map move
+map.on('moveend', () => {
+  const b = map.getBounds();
+  const visible = (geo?.features||[]).filter(f => {
+    const [lng,lat] = f.geometry.coordinates;
+    return b.contains([lat,lng]);
+  });
+  if (visible.length && visible.length < (geo?.features||[]).length) {
+    document.getElementById('meta').textContent = visible.length + ' companies in view · ' + visible.reduce((s,x)=>s+x.properties.jobs,0) + ' roles';
+  }
+});
 </script>
 </body></html>
 PYEOF
-echo written
+echo "written"
