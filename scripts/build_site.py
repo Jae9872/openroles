@@ -105,7 +105,7 @@ tr:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 </style></head><body>
 <div class='wrap'>
   <h1>openroles</h1>
-  <p class='sub'>Every live role at funded startups. Free forever. No paywall. No account. No AI spam — humans only.</p>
+  <p class='sub'>Every live role at funded startups. Free forever. No paywall. No account. No AI spam — humans only. <a href='map.html' style='color:var(--blue);margin-left:8px'> globe →</a></p>
   <div class='banner'>No paywall. No account. <b>%(n)d live roles from %(cs)d companies.</b>
     Filtered: <b>%(visa)d visa</b> · <b>%(remote)d remote</b> · <b>%(equity)d equity</b>. Updated %(t)s.</div>
   <div class='filters' role='toolbar' aria-label='Filter jobs'>

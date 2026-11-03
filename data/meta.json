@@ -1,5 +1,6 @@
 {
- "generated_at": "2026-11-03T07:38:56Z",
- "companies_ok": 71,
- "jobs": 2478
+ "generated_at": "2026-11-03T07:51:07Z",
+ "companies_ok": 1212,
+ "jobs": 41615,
+ "engine_source": "MIT fork: Riley-Dorrington/job-board-aggregator (1200 GH / 600 ashby / 400 lever slabs)"
 }
