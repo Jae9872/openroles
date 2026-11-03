@@ -7,7 +7,7 @@ by_c = {}
 for r in rows:
     k = (r.get("company_slug"), r.get("source"))
     by_c.setdefault(k, []).append(r)
-limit = 200  # page loads top chunk; rest throughput to chunked files later (fork path)
+limit = 600  # page loads a generous chunk; rest throughput to chunked files later (fork path)
 trs, i = [], 0
 for (slug, source), jobs in sorted(by_c.items()):
     for j in jobs:
@@ -34,5 +34,5 @@ h1{font-size:22px} table{border-collapse:collapse;width:100%%} td{border-bottom:
 </table><p style='color:#999;font-size:12px'>Roles enter the public list only with valid provenance; anything older than 30 days is purged automatically. Applying stays free, always.</p>
 </body></html>""") % {"nj": stamp["companies_ok"], "n": n, "cs": len(by_c), "trs": "".join(trs), "t": stamp["generated_at"]}
 (out/"index.html").write_text(html_doc)
-assert html_doc.count("<tr>") > n*0 and "free forever" in html_doc and n >= 900
+assert html_doc.count("<tr>") > 100 and "free forever" in html_doc and n >= 900
 print("SITE_OK rows=%d companies=%d" % (n, len(by_c)))
