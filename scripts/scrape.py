@@ -27,7 +27,7 @@ def fetch(slug, source):
         if not title or not link:
             continue
         out.append({"title": title, "company_slug": slug, "source": source,
-                    "location": loc, "url": link, "posted_at": posted,
+                    "location": loc, "url": link, "posted_at": posted, "id": j.get("id"),
                     "source_url": "https://%s" % ("/".join(url.split("/")[2:4])),
                     "fetched_at": NOW})
     return out
