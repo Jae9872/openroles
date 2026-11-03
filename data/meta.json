@@ -1,5 +1,6 @@
 {
- "generated_at": "2026-11-03T07:14:33Z",
- "companies_ok": 2,
- "jobs": 909
+ "generated_at": "2026-11-03T07:16:43Z",
+ "companies_ok": 71,
+ "jobs": 2478,
+ "engine_source": "MIT fork: Riley-Dorrington/job-board-aggregator subset_run"
 }
