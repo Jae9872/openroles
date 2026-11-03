@@ -46,10 +46,12 @@ def main():
             if smoke: return 1
     stamp = {"generated_at": NOW, "companies_ok": ok, "jobs": len(rows)}
     (ROOT / "data").mkdir(exist_ok=True)
-    (ROOT / "data/jobs.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
-    (ROOT / "data/meta.json").write_text(json.dumps(stamp, indent=1))
+    target_jobs = (ROOT / "data/smoke_jobs.jsonl") if smoke else (ROOT / "data/jobs.jsonl")
+    target_jobs.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    if not smoke:
+        (ROOT / "data/meta.json").write_text(json.dumps(stamp, indent=1))
     ok_all = ok >= 2 and len(rows) > 0
-    print("SMOKE_OK n_jobs=%d companies=%d fetched_at=%s" % (len(rows), ok, NOW) if ok_all else "SMOKE_FAIL")
+    print("SMOKE_OK n_jobs=%d companies=%d fetched_at=%s probe=%s" % (len(rows), ok, NOW, target_jobs.name) if ok_all else "SMOKE_FAIL")
     return 0 if ok_all else 1
 
 if __name__ == "__main__":
