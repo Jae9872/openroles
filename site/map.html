@@ -24,17 +24,21 @@ body{font:14px/1.5 'Inter',system-ui,-apple-system,sans-serif;background:var(--b
 .bar button.on{border-color:var(--text);color:var(--text);background:rgba(255,255,255,.06)}
 .bar button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .bar .count{color:var(--dim);font-size:10px}
-/* side panel */
 .panel{position:absolute;top:16px;right:16px;bottom:16px;width:380px;z-index:900;
-  background:rgba(24,24,27,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  background:rgba(24,24,27,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;
   box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform 200ms ease-out}
 .panel.hidden{transform:translateX(420px)}
 .panel h1{font-size:15px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border);letter-spacing:-.01em;font-weight:600}
+.panel .tabs{display:flex;border-bottom:1px solid var(--border)}
+.panel .tab{flex:1;padding:8px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all 150ms}
+.panel .tab.on{color:var(--text);border-bottom-color:var(--blue)}
+.panel .tab:hover{color:var(--text)}
 .panel .meta{padding:8px 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
-.panel .countries{padding:8px 16px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);max-height:120px;overflow-y:auto}
+.panel .countries{padding:8px 16px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);max-height:140px;overflow-y:auto}
 .panel .countries .title{font-weight:600;color:var(--text);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-.panel .countries .row{display:flex;justify-content:space-between;padding:2px 0}
+.panel .countries .row{display:flex;justify-content:space-between;padding:2px 0;cursor:pointer;border-radius:4px;padding:2px 4px;transition:background 150ms}
+.panel .countries .row:hover{background:rgba(255,255,255,.04)}
 .panel .search{padding:8px 16px;border-bottom:1px solid var(--border)}
 .panel .search input{width:100%;padding:7px 11px;border-radius:6px;border:1px solid var(--border);
   background:var(--bg);color:var(--text);font-size:13px}
@@ -54,7 +58,7 @@ body{font:14px/1.5 'Inter',system-ui,-apple-system,sans-serif;background:var(--b
 .panel .selected-card .stats{display:flex;gap:12px;font-size:12px;margin-bottom:10px;flex-wrap:wrap}
 .panel .selected-card .stats span{color:var(--muted)}
 .panel .selected-card .stats b{color:var(--text)}
-.panel .selected-card .roles{max-height:280px;overflow-y:auto}
+.panel .selected-card .roles{max-height:300px;overflow-y:auto}
 .panel .selected-card .role{padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
 .panel .selected-card .role a{color:var(--blue);text-decoration:none}
 .panel .selected-card .role a:hover{text-decoration:underline}
@@ -75,7 +79,7 @@ body{font:14px/1.5 'Inter',system-ui,-apple-system,sans-serif;background:var(--b
 .globe-tooltip{background:rgba(24,24,27,.92);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;pointer-events:none;color:var(--text)}
 @media (max-width:720px){
   .wrap{grid-template-columns:1fr}
-  .panel{position:absolute;bottom:0;left:0;right:0;width:100%;height:52vh;border-radius:12px 12px 0 0;border-left:none;border-top:1px solid var(--border)}
+  .panel{position:absolute;bottom:0;left:0;right:0;width:100%;height:55vh;border-radius:12px 12px 0 0;border-left:none;border-top:1px solid var(--border)}
   .bar{font-size:11px;padding:6px 8px;flex-wrap:wrap;justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -92,16 +96,20 @@ body{font:14px/1.5 'Inter',system-ui,-apple-system,sans-serif;background:var(--b
     <button class='toggle' onclick='cycleStyle()'>Style: Night</button>
   </div>
   <aside class='panel' id='panel'>
-    <h1>Companies</h1>
+    <h1>openroles atlas</h1>
+    <div class='tabs' style='display:flex;border-bottom:1px solid var(--border)'>
+      <button class='tab on' data-tab='countries' onclick='switchTab("countries")' style='flex:1;padding:8px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent'>Countries</button>
+      <button class='tab' data-tab='companies' onclick='switchTab("companies")' style='flex:1;padding:8px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent'>Companies</button>
+    </div>
     <div class='meta' id='meta'>Loading…</div>
-    <div class='countries' id='countries'>Loading countries…</div>
-    <div class='search'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
+    <div class='countries' id='countries' style='padding:8px 16px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)'>Loading countries…</div>
+    <div class='search' id='searchbox' style='display:none'><input id='q' type='search' placeholder='Filter companies…' aria-label='Filter companies'></div>
     <div class='list' id='list'></div>
     <div class='legend'>
-      <span><span class='dot' style='width:8px;height:8px;border-radius:50%;background:#60a5fa;display:inline-block'></span> &lt;10 roles</span>
-      <span><span class='dot' style='width:10px;height:10px;border-radius:50%;background:#a78bfa;display:inline-block'></span> 10-50</span>
-      <span><span class='dot' style='width:12px;height:12px;border-radius:50%;background:#34d399;display:inline-block'></span> 50+</span>
-      <span style='margin-left:auto;color:var(--dim)'>click a dot or a row</span>
+      <span><span style='width:8px;height:8px;border-radius:50%;background:#60a5fa;display:inline-block'></span> &lt;10 roles</span>
+      <span><span style='width:10px;height:10px;border-radius:50%;background:#a78bfa;display:inline-block'></span> 10-50</span>
+      <span><span style='width:12px;height:12px;border-radius:50%;background:#34d399;display:inline-block'></span> 50+</span>
+      <span style='margin-left:auto;color:var(--dim)'>click a country, then a company</span>
     </div>
     <a class='back' href='index.html'>← back to feed</a>
   </aside>
@@ -112,7 +120,7 @@ body{font:14px/1.5 'Inter',system-ui,-apple-system,sans-serif;background:var(--b
 </div>
 <script>
 const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-var geo = null, selected = null, currentFilter = 'all';
+var geo = null, selected = null, currentFilter = 'all', selectedCountry = null, countriesData = null;
 
 function hasFlag(feat, flag){ return (feat.properties.flags||'').split(' ').indexOf(flag) !== -1; }
 
@@ -138,10 +146,16 @@ const globe = Globe()(document.getElementById('globe'))
   .atmosphereAltitude(0.18)
   .pointAltitude(0.01)
   .pointColor(d => d.flags && d.flags.includes('visa') ? '#34d399' : (d.flags && d.flags.includes('equity') ? '#a78bfa' : '#60a5fa'))
-  .pointRadius(d => Math.max(0.6, Math.min(1.4, d.jobs / 25)))
+  .pointRadius(d => Math.max(0.45, Math.min(1.1, d.jobs / 30)))
   .pointLabel(d => '<div class="globe-tooltip"><b>'+d.name+'</b><br>'+d.jobs+' open roles<br><span style="color:#71717a;font-size:11px">click to see roles</span></div>')
   .onPointClick(d => selectCompany(d))
   .onPointHover(d => { document.body.style.cursor = d ? 'pointer' : 'default'; });
+
+window.globe = globe;
+if (!prefersReduced) globe.controls().autoRotate = true;
+globe.controls().autoRotateSpeed = 0.35;
+globe.controls().enableDamping = true;
+globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
 
 globe.onGlobeClick((coords) => {
   if (!coords || !geo || !geo.features) return;
@@ -155,13 +169,48 @@ globe.onGlobeClick((coords) => {
   if (best) selectCompany(best);
 });
 
-window.globe = globe;
-if (!prefersReduced) globe.controls().autoRotate = true;
-document.getElementById('globe').addEventListener('mouseenter', () => { if (globe.controls().autoRotate) globe.controls().autoRotateSpeed = 0.15; });
-document.getElementById('globe').addEventListener('mouseleave', () => { if (globe.controls().autoRotate) globe.controls().autoRotateSpeed = 0.35; });
-globe.controls().autoRotateSpeed = 0.35;
-globe.controls().enableDamping = true;
-globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, 0);
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  if (tab === 'countries') {
+    document.getElementById('searchbox').style.display = 'none';
+    renderCountries();
+  } else {
+    document.getElementById('searchbox').style.display = '';
+    renderList(document.getElementById('q').value);
+  }
+}
+
+function renderCountries(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if (!countriesData) { list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">Loading…</div>'; return; }
+  const filtered = countriesData.filter(c => c.country !== 'Unknown');
+  filtered.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'row';
+    d.innerHTML = '<div class="name">'+c.country+'<span class="count">'+c.jobs.toLocaleString()+'</span></div>'+
+                  '<div class="loc">'+c.companies+' companies</div>';
+    d.addEventListener('click', () => selectCountry(c));
+    list.appendChild(d);
+  });
+  document.getElementById('meta').textContent = filtered.length + ' countries · ' + filtered.reduce((s,c)=>s+c.jobs,0).toLocaleString() + ' roles';
+}
+
+function selectCountry(c){
+  selectedCountry = c.code;
+  globe.pointOfView({ lat: c.lat, lng: c.lng, altitude: 1.6 }, prefersReduced ? 0 : 900);
+  let back = document.getElementById('back-btn');
+  if (!back){ back = document.createElement('button'); back.id='back-btn'; back.style.cssText='margin:8px 16px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surf);color:var(--text);font-size:12px;cursor:pointer;width:calc(100% - 32px)'; back.textContent='← All countries'; back.onclick=clearCountry; document.getElementById('panel').insertBefore(back, document.getElementById('countries')); }
+  back.style.display = '';
+  switchTab('companies');
+}
+
+function clearCountry(){
+  selectedCountry = null;
+  const back = document.getElementById('back-btn'); if (back) back.style.display = 'none';
+  globe.pointOfView({ lat: 20, lng: 0, altitude: 2.2 }, prefersReduced ? 0 : 800);
+  switchTab('countries');
+}
 
 function applyFilter(f){
   currentFilter = f;
@@ -206,12 +255,13 @@ function renderList(filter=''){
   const list = document.getElementById('list');
   list.innerHTML = '';
   const f = filter.toLowerCase();
-  const feats = (geo?.features || [])
+  let feats = (geo?.features || [])
     .filter(x => !f || (x.properties.name||'').toLowerCase().includes(f))
-    .filter(x => currentFilter==='all' || hasFlag(x, currentFilter))
-    .sort((a,b)=> b.properties.jobs - a.properties.jobs);
+    .filter(x => currentFilter==='all' || hasFlag(x, currentFilter));
+  if (selectedCountry) feats = feats.filter(x => x.properties.country === selectedCountry);
+  feats = feats.sort((a,b)=> b.properties.jobs - a.properties.jobs);
   const total = feats.reduce((s,x)=>s+x.properties.jobs,0);
-  document.getElementById('meta').textContent = feats.length + ' companies · ' + total + ' roles';
+  document.getElementById('meta').textContent = feats.length + ' companies · ' + total + ' roles' + (selectedCountry ? ' (filtered)' : '');
   document.getElementById('c-all').textContent = (geo?.features||[]).length;
   document.getElementById('c-visa').textContent = (geo?.features||[]).filter(x=>hasFlag(x,'visa')).length;
   document.getElementById('c-remote').textContent = (geo?.features||[]).filter(x=>hasFlag(x,'remote')).length;
@@ -230,12 +280,11 @@ function renderList(filter=''){
 function selectCompany(feat){
   if (!feat) return;
   let target = feat;
-  // normalize: globe point data has id/name/jobs/lat/lng, not geometry
   if (!feat.geometry || !feat.geometry.coordinates) {
     const fid = feat.id || feat.properties?.id || feat.name;
     const match = (geo?.features || []).find(f => f.properties.id === fid);
     if (match) target = match;
-    else target = { properties: { id: fid, name: feat.name || fid, jobs: feat.jobs || 0, source: feat.source || '', flags: feat.flags || '' },
+    else target = { properties: { id: fid, name: feat.name || fid, jobs: feat.jobs || 0, source: feat.source || '', flags: feat.flags || '', visa: 0, remote: 0, equity: 0 },
                    geometry: { coordinates: [feat.lng || 0, feat.lat || 0] } };
   }
   selected = target;
@@ -243,7 +292,7 @@ function selectCompany(feat){
   const [lng, lat] = coords;
   globe.pointOfView({ lat, lng, altitude: 1.5 }, prefersReduced ? 0 : 800);
   renderList(document.getElementById('q').value);
-  showSelectedCard(feat);
+  showSelectedCard(target);
 }
 
 function showSelectedCard(feat){
@@ -299,16 +348,18 @@ fetch('companies.geojson').then(r=>r.json()).then(data => {
   geo = data; window.geo = geo;
   applyFilter('all');
   fetch('countries.json').then(r=>r.json()).then(cs => {
+    countriesData = cs; window.countriesData = countriesData;
+    renderCountries();
     const el = document.getElementById('countries');
-    el.innerHTML = '<div style="font-weight:600;color:var(--text);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Top countries</div>' +
-      cs.slice(0, 10).map(c => '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+c.country+'</span><span style="color:var(--emerald)">'+c.jobs.toLocaleString()+'</span></div>').join('');
+    if (el) el.innerHTML = '<div style="font-weight:600;color:var(--text);margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Top countries</div>' +
+      cs.slice(0, 8).map(c => '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+c.country+'</span><span style="color:var(--emerald)">'+c.jobs.toLocaleString()+'</span></div>').join('');
   }).catch(()=>{});
   // country borders
   fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson').then(r=>r.json()).then(countries => {
     globe.polygonsData(countries.features);
     globe.polygonCapColor(() => 'rgba(255,255,255,0.02)');
     globe.polygonSideColor(() => 'rgba(255,255,255,0.01)');
-    globe.polygonStrokeColor(() => 'rgba(96,165,250,0.25)');
+    globe.polygonStrokeColor(() => 'rgba(96,165,250,0.3)');
     globe.polygonAltitude(0.005);
   }).catch(()=>{});
 }).catch(err => {
